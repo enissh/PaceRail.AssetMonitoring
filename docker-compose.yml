@@ -1,0 +1,27 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:15-alpine
+    container_name: spacerail_db
+    environment:
+      POSTGRES_DB: PaceRailDb
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: your_secure_password
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+  api:
+    build: .
+    container_name: spacerail_api
+    ports:
+      - "5083:8080"
+    environment:
+      - ConnectionStrings__DefaultConnection=Host=db;Database=PaceRailDb;Username=postgres;Password=Ferizaji.001
+    depends_on:
+      - db
+
+volumes:
+  pgdata:

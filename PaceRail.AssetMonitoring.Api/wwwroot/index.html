@@ -2,77 +2,367 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>PACE Rail Asset & Safety Dashboard</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PACE Infrastructure - Rail Asset Operations Center</title>
+    <!-- Chart.js for Live Telemetry Graphs -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        body { font-family: Arial, sans-serif; margin: 30px; background: #f4f6f9; }
-        h1 { color: #1a365d; }
-        .card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); margin-bottom: 20px; }
-        input, select, button { padding: 10px; margin: 5px 0; width: 100%; box-sizing: border-box; }
-        button { background: #1a365d; color: white; border: none; cursor: pointer; font-weight: bold; }
+        :root {
+            --bg-dark: #0f172a;
+            --bg-card: #ffffff;
+            --primary: #1e3a8a;
+            --primary-hover: #1e40af;
+            --accent: #3b82f6;
+            --danger: #ef4444;
+            --warning: #f59e0b;
+            --success: #10b981;
+            --text-main: #1f2937;
+            --text-muted: #6b7280;
+            --border: #e5e7eb;
+        }
+
+        body { font-family: 'Inter', system-ui, -apple-system, sans-serif; margin: 0; padding: 20px; background-color: #f8fafc; color: var(--text-main); }
+        
+        .header { display: flex; justify-content: space-between; align-items: center; background: var(--bg-dark); color: white; padding: 20px 30px; border-radius: 12px; margin-bottom: 25px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); }
+        .header h1 { margin: 0; font-size: 1.4rem; font-weight: 600; letter-spacing: -0.025em; }
+        .status-badge { font-weight: 500; padding: 6px 14px; border-radius: 20px; font-size: 0.8rem; background: var(--success); color: white; display: flex; align-items: center; gap: 6px; }
+        .status-badge::before { content: ''; width: 8px; height: 8px; background: white; border-radius: 50%; display: inline-block; animation: pulse 2s infinite; }
+
+        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.4; } 100% { opacity: 1; } }
+
+        .top-actions { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
+        .top-actions h2 { margin: 0; font-size: 1.1rem; color: #334155; }
+
+        .card { background: var(--bg-card); border-radius: 12px; padding: 24px; box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06); margin-bottom: 25px; border: 1px solid var(--border); }
+        .grid-layout { display: grid; grid-template-columns: 2fr 1fr; gap: 25px; }
+
+        .alert-card { background: #fef2f2; border: 1px solid #fecaca; border-radius: 10px; padding: 16px; margin-bottom: 25px; display: none; animation: slideDown 0.3s ease-out; }
+        @keyframes slideDown { from { transform: translateY(-10px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+
+        button { padding: 8px 14px; border: none; border-radius: 6px; font-size: 0.85rem; font-weight: 600; cursor: pointer; transition: background 0.2s, transform 0.1s; }
+        button:active { transform: scale(0.98); }
+        
+        .btn-primary { background-color: var(--primary); color: white; }
+        .btn-primary:hover { background-color: var(--primary-hover); }
+        .btn-action { background-color: var(--danger); color: white; }
+        .btn-action:hover { background-color: #dc2626; }
+        .btn-resolve { background-color: var(--success); color: white; }
+        .btn-resolve:hover { background-color: #059669; }
+
         table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-        th, td { border: 1px solid #ddd; padding: 10px; text-align: left; }
-        .badge-critical { background: #e53e3e; color: white; padding: 4px 8px; border-radius: 4px; }
-        .badge-op { background: #38a169; color: white; padding: 4px 8px; border-radius: 4px; }
+        th, td { padding: 12px 14px; text-align: left; font-size: 0.875rem; border-bottom: 1px solid var(--border); }
+        th { background-color: #f8fafc; color: var(--text-muted); font-weight: 600; text-transform: uppercase; font-size: 0.75rem; letter-spacing: 0.05em; }
+        tr:hover td { background-color: #f8fafc; }
+
+        .badge { padding: 4px 10px; border-radius: 6px; font-weight: 600; font-size: 0.75rem; display: inline-block; }
+        .badge-op { background: #ecfdf5; color: #047857; }
+        .badge-due { background: #fffbeb; color: #b45309; }
+        .badge-critical { background: #fef2f2; color: #b91c1c; }
+
+        .chart-container { position: relative; height: 260px; width: 100%; margin-top: 15px; }
+
+        /* Modal Form Styles */
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(4px); display: none; justify-content: center; align-items: center; z-index: 1000; }
+        .modal { background: white; padding: 30px; border-radius: 12px; width: 100%; max-width: 450px; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1); }
+        .modal h3 { margin-top: 0; color: var(--bg-dark); }
+        .form-group { margin-bottom: 15px; }
+        .form-group label { display: block; font-size: 0.85rem; font-weight: 600; margin-bottom: 5px; color: #475569; }
+        .form-group input, .form-group select { width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 6px; font-size: 0.9rem; box-sizing: border-box; }
+        .form-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px; }
     </style>
 </head>
 <body>
-    <h1>PACE Infrastructure - Rail Asset Monitoring</h1>
 
-    <div class="card">
-        <h3>Register New Rail Asset</h3>
-        <input type="text" id="assetTag" placeholder="Asset Tag (e.g. CIV-ECM1-102)">
-        <input type="text" id="elr" placeholder="ELR (e.g. ECM1)">
-        <input type="text" id="assetName" placeholder="Asset Name (e.g. Retaining Wall B4)">
-        <select id="assetType">
-            <option value="Lineside Civils">Lineside Civils</option>
-            <option value="Level Crossing">Level Crossing</option>
-            <option value="Electrical Ancillary">Electrical Ancillary</option>
-        </select>
-        <button onclick="addAsset()">Save Asset</button>
+    <div class="header">
+        <h1>🚄 PACE Infrastructure Operations & Telemetry Center</h1>
+        <div id="systemHealth" class="status-badge">System Connected</div>
     </div>
 
-    <div class="card">
-        <h3>Active Rail Infrastructure Assets</h3>
-        <table>
-            <thead>
-                <tr><th>Tag</th><th>ELR</th><th>Name</th><th>Type</th><th>Status</th></tr>
-            </thead>
-            <tbody id="assetsTable"></tbody>
-        </table>
+    <div id="safetyAlertBox" class="alert-card">
+        <h3 style="margin-top:0; color: var(--danger); font-size: 1rem;">⚠️ Spatial Proximity Violations & Emergency Dispatches Triggered</h3>
+        <div id="alertContent" style="font-size: 0.9rem; color: #7f1d1d;"></div>
+    </div>
+
+    <div class="grid-layout">
+        <div>
+            <!-- Active Rail Assets Card -->
+            <div class="card">
+                <div class="top-actions">
+                    <h2>Active Rail Assets</h2>
+                    <button class="btn-primary" onclick="openModal()">+ Register Asset</button>
+                </div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Asset Tag</th>
+                            <th>ELR</th>
+                            <th>Name</th>
+                            <th>Chainage</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="assetsTable"></tbody>
+                </table>
+            </div>
+
+            <!-- Dispatched Work Orders Card -->
+            <div class="card">
+                <div class="top-actions">
+                    <h2>Dispatched Maintenance Work Orders</h2>
+                </div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Work Order Title</th>
+                            <th>Priority</th>
+                            <th>Status</th>
+                            <th>Assigned Team</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="workOrdersTable"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <div>
+            <!-- Telemetry Chart Card -->
+            <div class="card">
+                <h2>Asset Sensor Analytics</h2>
+                <p id="selectedAssetTitle" style="font-size:0.85rem; color:var(--text-muted); margin-bottom:10px;">Select an asset via the 'Telemetry' button.</p>
+                <div class="chart-container">
+                    <canvas id="telemetryChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Register Asset Modal Form -->
+    <div id="assetModal" class="modal-overlay">
+        <div class="modal">
+            <h3>Register New Rail Asset</h3>
+            <form id="createAssetForm" onsubmit="submitAsset(event)">
+                <div class="form-group">
+                    <label>Asset Tag</label>
+                    <input type="text" id="assetTag" required placeholder="e.g. CIV-ECM1-202">
+                </div>
+                <div class="form-group">
+                    <label>Engineers Line Reference (ELR)</label>
+                    <input type="text" id="elr" required placeholder="e.g. ECM1">
+                </div>
+                <div class="form-group">
+                    <label>Asset Name</label>
+                    <input type="text" id="assetName" required placeholder="e.g. Retaining Wall B5">
+                </div>
+                <div class="form-group">
+                    <label>Asset Type</label>
+                    <input type="text" id="assetType" required placeholder="e.g. Civils / Structure">
+                </div>
+                <div class="form-group">
+                    <label>Initial Status</label>
+                    <select id="status">
+                        <option value="Operational">Operational</option>
+                        <option value="Inspection Due">Inspection Due</option>
+                        <option value="Critical Defect">Critical Defect</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Start Chainage (Miles)</label>
+                    <input type="number" step="0.1" id="startChainageMiles" required placeholder="12.4">
+                </div>
+                <div class="form-actions">
+                    <button type="button" style="background:#e2e8f0; color:#475569;" onclick="closeModal()">Cancel</button>
+                    <button type="submit" class="btn-primary">Save Asset</button>
+                </div>
+            </form>
+        </div>
     </div>
 
     <script>
+        let selectedAssetId = null;
+        let telemetryChart = null;
+
+        function initChart() {
+            const ctx = document.getElementById('telemetryChart').getContext('2d');
+            telemetryChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        label: 'Track Temperature (°C)',
+                        data: [],
+                        borderColor: '#3b82f6',
+                        backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                        borderWidth: 2,
+                        tension: 0.3,
+                        fill: true
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: { y: { beginAtZero: false } }
+                }
+            });
+        }
+
+        async function checkHealth() {
+            try {
+                const res = await fetch('/health');
+                const badge = document.getElementById('systemHealth');
+                if (res.ok) {
+                    badge.innerText = "System Connected & Secure";
+                    badge.style.background = "var(--success)";
+                } else {
+                    badge.innerText = "Database Degraded";
+                    badge.style.background = "var(--danger)";
+                }
+            } catch {
+                document.getElementById('systemHealth').innerText = "Offline";
+                document.getElementById('systemHealth').style.background = "var(--danger)";
+            }
+        }
+
         async function loadAssets() {
-            const res = await fetch('/api/assets');
+            const res = await fetch('/api/assets?page=1&pageSize=20');
             const data = await res.json();
+            
             document.getElementById('assetsTable').innerHTML = data.map(a => `
                 <tr>
                     <td><b>${a.assetTag}</b></td>
-                    <td>${a.elr}</td>
+                    <td><code>${a.elr}</code></td>
                     <td>${a.assetName}</td>
-                    <td>${a.assetType}</td>
-                    <td><span class="${a.status === 'Critical Defect' ? 'badge-critical' : 'badge-op'}">${a.status}</span></td>
+                    <td>${a.startChainageMiles || 0.0} mi</td>
+                    <td>
+                        <span class="badge ${a.status === 'Critical Defect' ? 'badge-critical' : a.status === 'Inspection Due' ? 'badge-due' : 'badge-op'}">
+                            ${a.status}
+                        </span>
+                    </td>
+                    <td>
+                        <button class="btn-primary" style="padding:4px 8px; font-size:0.75rem;" onclick="loadAssetTelemetry(${a.id}, '${a.assetTag}')">Telemetry</button>
+                        ${a.status === 'Critical Defect' ? `<button class="btn-action" style="padding:4px 8px; font-size:0.75rem;" onclick="runSafetyEngine(${a.id})">Scan Safety</button>` : ''}
+                    </td>
                 </tr>
             `).join('');
+
+            if (!selectedAssetId && data.length > 0) {
+                loadAssetTelemetry(data[0].id, data[0].assetTag);
+            }
         }
 
-        async function addAsset() {
-            const asset = {
+        async function loadAssetTelemetry(assetId, assetTag) {
+            selectedAssetId = assetId;
+            document.getElementById('selectedAssetTitle').innerText = `Live readings for: ${assetTag}`;
+
+            try {
+                const res = await fetch(`/api/telemetry/asset/${assetId}?limit=10`);
+                const readings = await res.json();
+                const sorted = readings.reverse();
+                
+                telemetryChart.data.labels = sorted.map(r => new Date(r.timestamp).toLocaleTimeString());
+                telemetryChart.data.datasets[0].data = sorted.map(r => r.value);
+                telemetryChart.update();
+            } catch (err) {
+                console.error("Failed to load telemetry data", err);
+            }
+        }
+
+        async function loadWorkOrders() {
+            const res = await fetch('/api/workorders');
+            const orders = await res.json();
+
+            document.getElementById('workOrdersTable').innerHTML = orders.length === 0 
+                ? `<tr><td colspan="5" style="text-align:center; color:var(--text-muted);">No active work orders. Scan a Critical Defect asset to trigger automated safety dispatches.</td></tr>`
+                : orders.map(w => `
+                    <tr>
+                        <td><b>${w.title}</b></td>
+                        <td><span class="badge badge-critical">${w.priority}</span></td>
+                        <td><b>${w.status}</b></td>
+                        <td>${w.assignedTeam}</td>
+                        <td>
+                            ${w.status !== 'Closed' ? `<button class="btn-resolve" style="padding:4px 8px; font-size:0.75rem;" onclick="resolveWorkOrder(${w.id})">Resolve</button>` : '<span style="color:var(--success); font-weight:bold;">Resolved</span>'}
+                        </td>
+                    </tr>
+                `).join('');
+        }
+
+        async function runSafetyEngine(assetId) {
+            const res = await fetch(`/api/assets/${assetId}/evaluate-safety`, { method: 'POST' });
+            if (res.ok) {
+                const data = await res.json();
+                const alertBox = document.getElementById('safetyAlertBox');
+                const alertContent = document.getElementById('alertContent');
+
+                alertBox.style.display = 'block';
+                if (data.violationsTriggered > 0) {
+                    alertContent.innerHTML = `
+                        <p><strong>Successfully triggered ${data.violationsTriggered} spatial rule violation(s) and dispatched work orders:</strong></p>
+                        <ul style="margin:5px 0 0 20px; padding:0;">${data.details.map(v => `<li>${v.reason}</li>`).join('')}</ul>
+                    `;
+                } else {
+                    alertContent.innerHTML = `<p style="color: #047857; margin:0;">Scan completed. No adjacent assets found within the 0.5-mile hazard radius.</p>`;
+                }
+                loadAssets();
+                loadWorkOrders();
+            }
+        }
+
+        async function resolveWorkOrder(id) {
+            await fetch(`/api/workorders/${id}/status`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify('Closed')
+            });
+            loadWorkOrders();
+        }
+
+        function openModal() { document.getElementById('assetModal').style.display = 'flex'; }
+        function closeModal() { document.getElementById('assetModal').style.display = 'none'; }
+
+        async function submitAsset(event) {
+            event.preventDefault();
+            const payload = {
                 assetTag: document.getElementById('assetTag').value,
                 elr: document.getElementById('elr').value,
                 assetName: document.getElementById('assetName').value,
                 assetType: document.getElementById('assetType').value,
-                status: 'Operational'
+                status: document.getElementById('status').value,
+                startChainageMiles: parseFloat(document.getElementById('startChainageMiles').value) || 0.0,
+                endChainageMiles: 0.0
             };
-            await fetch('/api/assets', {
+
+            const res = await fetch('/api/assets', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(asset)
+                body: JSON.stringify(payload)
             });
-            loadAssets();
+
+            if (res.ok) {
+                closeModal();
+                document.getElementById('createAssetForm').reset();
+                loadAssets();
+            } else {
+                alert('Failed to register asset.');
+            }
         }
 
+        // Initialize Application
+        initChart();
+        checkHealth();
         loadAssets();
+        loadWorkOrders();
+
+        // Polling loop for active charts and work orders
+        setInterval(() => {
+            if (selectedAssetId) {
+                fetch(`/api/assets/${selectedAssetId}`)
+                    .then(res => res.json())
+                    .then(asset => loadAssetTelemetry(selectedAssetId, asset.assetTag))
+                    .catch(() => {});
+            }
+            loadWorkOrders();
+        }, 10000);
     </script>
 </body>
 </html>
