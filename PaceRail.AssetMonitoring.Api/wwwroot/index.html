@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>PACE Rail Asset & Safety Dashboard</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 30px; background: #f4f6f9; }
+        h1 { color: #1a365d; }
+        .card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); margin-bottom: 20px; }
+        input, select, button { padding: 10px; margin: 5px 0; width: 100%; box-sizing: border-box; }
+        button { background: #1a365d; color: white; border: none; cursor: pointer; font-weight: bold; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        th, td { border: 1px solid #ddd; padding: 10px; text-align: left; }
+        .badge-critical { background: #e53e3e; color: white; padding: 4px 8px; border-radius: 4px; }
+        .badge-op { background: #38a169; color: white; padding: 4px 8px; border-radius: 4px; }
+    </style>
+</head>
+<body>
+    <h1>PACE Infrastructure - Rail Asset Monitoring</h1>
+
+    <div class="card">
+        <h3>Register New Rail Asset</h3>
+        <input type="text" id="assetTag" placeholder="Asset Tag (e.g. CIV-ECM1-102)">
+        <input type="text" id="elr" placeholder="ELR (e.g. ECM1)">
+        <input type="text" id="assetName" placeholder="Asset Name (e.g. Retaining Wall B4)">
+        <select id="assetType">
+            <option value="Lineside Civils">Lineside Civils</option>
+            <option value="Level Crossing">Level Crossing</option>
+            <option value="Electrical Ancillary">Electrical Ancillary</option>
+        </select>
+        <button onclick="addAsset()">Save Asset</button>
+    </div>
+
+    <div class="card">
+        <h3>Active Rail Infrastructure Assets</h3>
+        <table>
+            <thead>
+                <tr><th>Tag</th><th>ELR</th><th>Name</th><th>Type</th><th>Status</th></tr>
+            </thead>
+            <tbody id="assetsTable"></tbody>
+        </table>
+    </div>
+
+    <script>
+        async function loadAssets() {
+            const res = await fetch('/api/assets');
+            const data = await res.json();
+            document.getElementById('assetsTable').innerHTML = data.map(a => `
+                <tr>
+                    <td><b>${a.assetTag}</b></td>
+                    <td>${a.elr}</td>
+                    <td>${a.assetName}</td>
+                    <td>${a.assetType}</td>
+                    <td><span class="${a.status === 'Critical Defect' ? 'badge-critical' : 'badge-op'}">${a.status}</span></td>
+                </tr>
+            `).join('');
+        }
+
+        async function addAsset() {
+            const asset = {
+                assetTag: document.getElementById('assetTag').value,
+                elr: document.getElementById('elr').value,
+                assetName: document.getElementById('assetName').value,
+                assetType: document.getElementById('assetType').value,
+                status: 'Operational'
+            };
+            await fetch('/api/assets', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(asset)
+            });
+            loadAssets();
+        }
+
+        loadAssets();
+    </script>
+</body>
+</html>

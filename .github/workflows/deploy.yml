@@ -1,0 +1,56 @@
+name: Deploy PaceRail Web API to DigitalOcean
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup .NET 10 SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Restore Dependencies
+        run: dotnet restore PaceRail.AssetMonitoring.Api/PaceRail.AssetMonitoring.Api.csproj
+
+      - name: Build & Publish Project
+        run: |
+          dotnet publish PaceRail.AssetMonitoring.Api/PaceRail.AssetMonitoring.Api.csproj \
+            -c Release \
+            -o ./publish
+
+      - name: Stop Running Service on Server
+        uses: appleboy/ssh-action@v1.0.0
+        with:
+          host: ${{ secrets.DROPLET_IP }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            sudo systemctl stop pacerail-api.service || true
+
+      - name: Copy Files to Droplet via SCP
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.DROPLET_IP }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          source: "./publish/*"
+          target: "/var/www/pacerail-api"
+          strip_components: 1
+
+      - name: Restart Application Service
+        uses: appleboy/ssh-action@v1.0.0
+        with:
+          host: ${{ secrets.DROPLET_IP }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            sudo systemctl start pacerail-api.service
+            sudo systemctl status pacerail-api.service

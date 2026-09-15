@@ -1,0 +1,13 @@
+# .NET Build output
+bin/
+obj/
+out/
+publish/
+
+# IDE files
+.vscode/
+.vs/
+*.user
+
+# Environment settings
+appsettings.Development.json
