@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Npgsql;
 using PaceRail.AssetMonitoring.Api.Data;
 using PaceRail.AssetMonitoring.Api.Data.Interceptors;
 using PaceRail.AssetMonitoring.Api.Middleware;
@@ -8,8 +9,33 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllers();
 
-var connectionString = builder.Configuration.GetConnectionString("DefaultConnection") 
-    ?? throw new InvalidOperationException("DefaultConnection string is missing.");
+// Check for Render's environment variable or fallback to appsettings
+var databaseUrl = Environment.GetEnvironmentVariable("DATABASE_URL") 
+    ?? builder.Configuration.GetConnectionString("DefaultConnection")
+    ?? throw new InvalidOperationException("Database connection string is missing.");
+
+string connectionString;
+
+if (databaseUrl.StartsWith("postgres://") || databaseUrl.StartsWith("postgresql://"))
+{
+    var uri = new Uri(databaseUrl);
+    var userInfo = uri.UserInfo.Split(':');
+    
+    connectionString = new NpgsqlConnectionStringBuilder
+    {
+        Host = uri.Host,
+        Port = uri.Port > 0 ? uri.Port : 5432,
+        Username = userInfo[0],
+        Password = userInfo.Length > 1 ? userInfo[1] : string.Empty,
+        Database = uri.AbsolutePath.TrimStart('/'),
+        SslMode = SslMode.Require,
+        TrustServerCertificate = true
+    }.ToString();
+}
+else
+{
+    connectionString = databaseUrl;
+}
 
 // Register EF Core Interceptor
 builder.Services.AddSingleton<AuditDbContextInterceptor>();
