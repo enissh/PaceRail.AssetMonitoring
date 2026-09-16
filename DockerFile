@@ -1,0 +1,20 @@
+# Build Stage
+FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
+WORKDIR /src
+
+# Copy your project file (Make sure this matches your actual .csproj file name)
+COPY ["PaceRail.Api.csproj", "./"]
+RUN dotnet restore "PaceRail.Api.csproj"
+
+# Copy everything else and publish
+COPY . .
+RUN dotnet publish -c Release -o /app/publish
+
+# Runtime Stage
+FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS final
+WORKDIR /app
+COPY --from=build /app/publish .
+
+# Render assigns a dynamic port, this tells ASP.NET to use it
+ENV ASPNETCORE_URLS=http://+:${PORT}
+ENTRYPOINT ["dotnet", "PaceRail.Api.dll"]
