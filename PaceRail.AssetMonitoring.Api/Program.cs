@@ -96,6 +96,10 @@ app.MapFallbackToFile("index.html");
 using (var scope = app.Services.CreateScope())
 {
     var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+    
+    // Automatically creates missing database tables on Render before seeding
+    context.Database.EnsureCreated();
+    
     DbInitializer.Seed(context);
 }
 
