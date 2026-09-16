@@ -11,72 +11,74 @@
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <style>
         :root {
-            --bg-dark: #090d16;
-            --bg-panel: #ffffff;
-            --primary: #2563eb;
-            --primary-hover: #1d4ed8;
-            --accent: #38bdf8;
-            --danger: #f43f5e;
-            --warning: #fbbf24;
-            --success: #10b981;
-            --text-main: #0f172a;
-            --text-muted: #64748b;
-            --border: #e2e8f0;
+            --bg-dark: #0b0f19;
+            --bg-panel: #131c2e;
+            --primary: #06b6d4; /* Vibrant Cyan */
+            --primary-hover: #0891b2;
+            --accent: #3b82f6; /* Electric Blue */
+            --danger: #ef4444; /* Neon Crimson */
+            --warning: #f59e0b; /* Amber */
+            --success: #10b981; /* Emerald */
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --border: #1e293b;
         }
 
-        body { font-family: 'Inter', system-ui, -apple-system, sans-serif; margin: 0; padding: 25px; background-color: #f1f5f9; color: var(--text-main); }
+        body { font-family: 'Inter', system-ui, -apple-system, sans-serif; margin: 0; padding: 25px; background-color: var(--bg-dark); color: var(--text-main); }
         
-        .header { display: flex; justify-content: space-between; align-items: center; background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); color: white; padding: 20px 30px; border-radius: 14px; margin-bottom: 25px; box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.3); }
-        .header h1 { margin: 0; font-size: 1.25rem; font-weight: 700; display: flex; align-items: center; gap: 10px; }
+        .header { display: flex; justify-content: space-between; align-items: center; background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%); color: white; padding: 20px 30px; border-radius: 14px; margin-bottom: 25px; box-shadow: 0 10px 25px -5px rgba(6, 182, 212, 0.15); border: 1px solid rgba(6, 182, 212, 0.2); }
+        .header h1 { margin: 0; font-size: 1.25rem; font-weight: 700; display: flex; align-items: center; gap: 10px; letter-spacing: -0.025em; }
         .header-actions { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
         
-        .status-badge { font-weight: 600; padding: 6px 14px; border-radius: 30px; font-size: 0.75rem; background: rgba(16, 185, 129, 0.2); color: #34d399; border: 1px solid rgba(52, 211, 153, 0.3); }
+        .status-badge { font-weight: 600; padding: 6px 14px; border-radius: 30px; font-size: 0.75rem; background: rgba(16, 185, 129, 0.15); color: #34d399; border: 1px solid rgba(52, 211, 153, 0.3); }
 
         .toolbar { display: flex; gap: 12px; margin-bottom: 15px; align-items: center; flex-wrap: wrap; }
-        .toolbar input, .toolbar select { padding: 8px 12px; border: 1px solid var(--border); border-radius: 8px; font-size: 0.85rem; outline: none; background: #f8fafc; }
+        .toolbar input, .toolbar select { padding: 8px 12px; border: 1px solid var(--border); border-radius: 8px; font-size: 0.85rem; outline: none; background: #0f172a; color: var(--text-main); }
         .toolbar input { flex-grow: 1; max-width: 240px; }
 
-        .card { background: var(--bg-panel); border-radius: 14px; padding: 24px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05); margin-bottom: 25px; border: 1px solid var(--border); }
+        .card { background: var(--bg-panel); border-radius: 14px; padding: 24px; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3); margin-bottom: 25px; border: 1px solid var(--border); }
         .grid-layout { display: grid; grid-template-columns: 1.6fr 1.1fr; gap: 25px; }
 
         button { padding: 7px 12px; border: none; border-radius: 7px; font-size: 0.78rem; font-weight: 600; cursor: pointer; transition: all 0.2s ease; }
-        .btn-primary { background: var(--primary); color: white; }
-        .btn-primary:hover { background: var(--primary-hover); }
-        .btn-secondary { background: #e2e8f0; color: #334155; }
-        .btn-secondary:hover { background: #cbd5e1; }
-        .btn-delete { background: #475569; color: white; }
+        .btn-primary { background: var(--primary); color: #0b0f19; font-weight: 700; }
+        .btn-primary:hover { background: var(--primary-hover); color: white; }
+        .btn-secondary { background: #1e293b; color: #cbd5e1; border: 1px solid #334155; }
+        .btn-secondary:hover { background: #334155; color: white; }
+        .btn-delete { background: #334155; color: #f87171; }
+        .btn-delete:hover { background: #ef4444; color: white; }
         .btn-spike { background: #d97706; color: white; }
+        .btn-spike:hover { background: #b45309; }
 
-        .view-toggle { display: flex; gap: 6px; margin-bottom: 15px; background: #f1f5f9; padding: 4px; border-radius: 8px; width: fit-content; }
+        .view-toggle { display: flex; gap: 6px; margin-bottom: 15px; background: #0f172a; padding: 4px; border-radius: 8px; width: fit-content; border: 1px solid var(--border); }
         .view-btn { padding: 6px 12px; border-radius: 6px; font-size: 0.75rem; background: transparent; border: none; font-weight: 600; cursor: pointer; color: var(--text-muted); }
-        .view-btn.active { background: white; color: var(--primary); box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+        .view-btn.active { background: var(--primary); color: #0b0f19; font-weight: 700; box-shadow: 0 1px 3px rgba(0,0,0,0.3); }
 
         table { width: 100%; border-collapse: collapse; margin-top: 5px; }
         th, td { padding: 10px; text-align: left; font-size: 0.82rem; border-bottom: 1px solid var(--border); }
-        th { background-color: #f8fafc; color: var(--text-muted); font-weight: 600; text-transform: uppercase; font-size: 0.68rem; }
-        tr:hover td { background-color: #f8fafc; cursor: pointer; }
+        th { background-color: #0f172a; color: var(--text-muted); font-weight: 600; text-transform: uppercase; font-size: 0.68rem; letter-spacing: 0.05em; }
+        tr:hover td { background-color: rgba(6, 182, 212, 0.04); cursor: pointer; }
 
         .badge { padding: 4px 10px; border-radius: 20px; font-weight: 600; font-size: 0.68rem; display: inline-block; text-transform: uppercase; }
-        .badge-op { background: #d1fae5; color: #065f46; }
-        .badge-due { background: #fef3c7; color: #92400e; }
-        .badge-critical { background: #ffe4e6; color: #9f1239; }
+        .badge-op { background: rgba(16, 185, 129, 0.15); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.3); }
+        .badge-due { background: rgba(245, 158, 11, 0.15); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.3); }
+        .badge-critical { background: rgba(239, 68, 68, 0.15); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.3); }
 
         /* GIS Map View Styling */
         #mapView { height: 380px; width: 100%; border-radius: 10px; display: none; margin-top: 10px; border: 1px solid var(--border); }
         
         /* AI Risk Bar Styling */
-        .progress-bar-bg { width: 100%; background: #e2e8f0; border-radius: 6px; height: 8px; overflow: hidden; margin-top: 4px; }
-        .progress-bar-fill { height: 100%; background: linear-gradient(90deg, #10b981 0%, #f59e0b 70%, #f43f5e 100%); width: 0%; transition: width 0.4s ease; }
+        .progress-bar-bg { width: 100%; background: #0f172a; border-radius: 6px; height: 8px; overflow: hidden; margin-top: 4px; border: 1px solid var(--border); }
+        .progress-bar-fill { height: 100%; background: linear-gradient(90deg, #10b981 0%, #f59e0b 70%, #ef4444 100%); width: 0%; transition: width 0.4s ease; }
 
         .chart-container { position: relative; height: 190px; width: 100%; margin-top: 10px; }
-        .stream-console { background: #090d16; color: #38bdf8; font-family: monospace; padding: 12px; border-radius: 8px; font-size: 0.75rem; height: 90px; overflow-y: auto; margin-top: 12px; }
+        .stream-console { background: #07090e; color: #38bdf8; font-family: monospace; padding: 12px; border-radius: 8px; font-size: 0.75rem; height: 90px; overflow-y: auto; margin-top: 12px; border: 1px solid var(--border); }
         
         /* Modals */
-        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.7); backdrop-filter: blur(6px); display: none; justify-content: center; align-items: center; z-index: 1000; }
-        .modal { background: white; padding: 30px; border-radius: 16px; width: 100%; max-width: 480px; box-shadow: 0 25px 50px rgba(0,0,0,0.25); }
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(7, 9, 14, 0.8); backdrop-filter: blur(6px); display: none; justify-content: center; align-items: center; z-index: 1000; }
+        .modal { background: var(--bg-panel); color: var(--text-main); padding: 30px; border-radius: 16px; width: 100%; max-width: 480px; box-shadow: 0 25px 50px rgba(0,0,0,0.5); border: 1px solid var(--border); }
         .form-group { margin-bottom: 16px; }
-        .form-group label { display: block; font-size: 0.8rem; font-weight: 700; margin-bottom: 6px; color: #334155; text-transform: uppercase; }
-        .form-group input, .form-group select { width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 8px; font-size: 0.9rem; background: #f8fafc; box-sizing: border-box; }
+        .form-group label { display: block; font-size: 0.8rem; font-weight: 700; margin-bottom: 6px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; }
+        .form-group input, .form-group select { width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 8px; font-size: 0.9rem; background: #0f172a; color: var(--text-main); box-sizing: border-box; }
         .form-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px; }
     </style>
 </head>
@@ -85,7 +87,6 @@
     <div class="header">
         <h1>🚄 PACE Infrastructure Enterprise Command & Telemetry</h1>
         <div class="header-actions">
-            <!-- Feature #4: Audit Export Button Set -->
             <button class="btn-secondary" onclick="exportAuditReport('csv')">📄 Export CSV Audit</button>
             <button class="btn-secondary" onclick="exportAuditReport('pdf')">📊 Export PDF Compliance</button>
             <button class="btn-secondary" onclick="openWebhookModal()">🔔 Webhook Routing</button>
@@ -95,7 +96,7 @@
 
     <div class="grid-layout">
         <div>
-            <!-- Feature #1: Active Assets Split-View Matrix & GIS Inspector -->
+            <!-- Active Assets Split-View Matrix & GIS Inspector -->
             <div class="card">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
                     <h2 style="margin:0; font-size: 1.05rem; font-weight: 700;">Active Rail Assets & GIS Inspector</h2>
@@ -164,8 +165,8 @@
                 </div>
                 <p id="selectedAssetTitle" style="font-size:0.78rem; color:var(--text-muted); margin: 6px 0 10px 0;">Select an asset from the map or table.</p>
                 
-                <!-- Feature #2: Predictive AI Failure Forecasting Progress Gauge -->
-                <div style="margin: 15px 0; padding: 12px; background: #f8fafc; border-radius: 8px; border: 1px solid var(--border);">
+                <!-- Predictive AI Failure Forecasting Progress Gauge -->
+                <div style="margin: 15px 0; padding: 12px; background: #0f172a; border-radius: 8px; border: 1px solid var(--border);">
                     <div style="display: flex; justify-content: space-between; font-size: 0.75rem; font-weight: 700;">
                         <span>🤖 AI Predictive Health Prognosis</span>
                         <span id="aiRiskPercentage" style="color: var(--primary);">--% Risk</span>
@@ -182,7 +183,7 @@
                     <canvas id="telemetryChart"></canvas>
                 </div>
 
-                <div style="margin-top: 15px; font-size: 0.75rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Live Telemetry Stream Feed</div>
+                <div style="margin-top: 15px; font-size: 0.75rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em;">Live Telemetry Stream Feed</div>
                 <div id="streamConsole" class="stream-console">
                     <div>[--:--:--] System telemetry aggregator initialized successfully.</div>
                 </div>
@@ -223,7 +224,7 @@
         </div>
     </div>
 
-    <!-- Feature #3: Webhook Routing Configuration Modal -->
+    <!-- Webhook Routing Configuration Modal -->
     <div id="webhookModal" class="modal-overlay">
         <div class="modal">
             <h3 style="margin-top:0;">🔔 Webhook & Emergency Pager Escalation</h3>
@@ -264,21 +265,32 @@
                     datasets: [{
                         label: 'Track Temperature (°C)',
                         data: [],
-                        borderColor: '#2563eb',
-                        backgroundColor: 'rgba(37, 99, 235, 0.08)',
-                        borderWidth: 2,
+                        borderColor: '#06b6d4',
+                        backgroundColor: 'rgba(6, 182, 212, 0.1)',
+                        borderWidth: 2.5,
                         tension: 0.35,
                         fill: true
                     }]
                 },
-                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
+                options: { 
+                    responsive: true, 
+                    maintainAspectRatio: false, 
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        x: { grid: { color: '#1e293b' }, ticks: { color: '#94a3b8' } },
+                        y: { grid: { color: '#1e293b' }, ticks: { color: '#94a3b8' } }
+                    }
+                }
             });
         }
 
-        // Initialize Leaflet GIS Map Instance
+        // Initialize Leaflet GIS Map Instance with Dark Tiles
         function initMap() {
             leafletMap = L.map('mapView').setView([42.3601, 21.2500], 11);
-            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, attribution: 'OpenStreetMap' }).addTo(leafletMap);
+            L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { 
+                maxZoom: 19, 
+                attribution: '&copy; <a href="https://carto.com/">CARTO</a>' 
+            }).addTo(leafletMap);
         }
 
         // Toggle Split View Mode (Table vs GIS Map)
@@ -294,7 +306,6 @@
                 btnTable.classList.remove('active');
                 btnMap.classList.add('active');
 
-                // Recalculate dimensions & draw pins upon opening map view
                 setTimeout(() => {
                     leafletMap.invalidateSize();
                     renderMapMarkers(allFetchedAssets);
@@ -333,7 +344,6 @@
                 `).join('');
         }
 
-        // Render color-coded Leaflet pins with click fly-to animation
         function renderMapMarkers(assets) {
             mapMarkers.forEach(m => leafletMap.removeLayer(m));
             mapMarkers = [];
@@ -342,9 +352,9 @@
                 const lat = a.latitude || (42.3600 + (idx * 0.015));
                 const lng = a.longitude || (21.2500 + (idx * 0.020));
 
-                let pinColor = '#10b981'; // Green = Operational
-                if (a.status === 'Inspection Due') pinColor = '#fbbf24'; // Yellow
-                if (a.status === 'Critical Defect') pinColor = '#f43f5e'; // Red
+                let pinColor = '#10b981'; 
+                if (a.status === 'Inspection Due') pinColor = '#f59e0b'; 
+                if (a.status === 'Critical Defect') pinColor = '#ef4444'; 
 
                 const marker = L.circleMarker([lat, lng], {
                     radius: 9,
@@ -356,10 +366,10 @@
                 }).addTo(leafletMap);
 
                 marker.bindPopup(`
-                    <div style="padding:2px;">
-                        <b style="font-size:0.88rem; color:#0f172a;">${a.assetTag}</b><br>
-                        <span style="color:#64748b;">ELR: ${a.elr}</span><br>
-                        <span style="color:#64748b;">Name: ${a.assetName}</span><br>
+                    <div style="padding:2px; background:#131c2e; color:#f8fafc;">
+                        <b style="font-size:0.88rem; color:#06b6d4;">${a.assetTag}</b><br>
+                        <span style="color:#94a3b8;">ELR: ${a.elr}</span><br>
+                        <span style="color:#94a3b8;">Name: ${a.assetName}</span><br>
                         <div style="margin-top:4px; font-weight:bold; color:${pinColor};">
                             Status: ${a.status}
                         </div>
@@ -392,12 +402,10 @@
             appendConsole(`Telemetry feed synchronized for [${assetTag}]`);
         }
 
-        // Feature #2: Predictive AI Failure Forecasting Computation
         function calculatePredictiveRisk(readings) {
             if (!readings || readings.length === 0) return;
             const latestValue = readings[readings.length - 1].value;
             
-            // Risk threshold calculation
             let risk = Math.min(Math.round((latestValue / 90) * 100), 100);
             let remainingHours = Math.max(Math.round((100 - risk) * 1.8), 2);
 
@@ -406,7 +414,6 @@
             document.getElementById('aiRemainingHours').innerText = `Est. Remaining Operational Time: ${remainingHours} Hours`;
         }
 
-        // Feature #3: Dispatch Incident Webhook Pager Escalation
         async function triggerWebhookEscalation(assetTag, value) {
             const webhookUrl = document.getElementById('webhookUrl').value;
             appendConsole(`🚨 Webhook dispatched to ${webhookUrl} for Asset ${assetTag} (Val: ${value})`);
@@ -426,7 +433,6 @@
             loadAssetTelemetry(selectedAssetId, selectedAssetTag);
         }
 
-        // Feature #4: CSV / PDF Audit Compliance Report Generator
         function exportAuditReport(format) {
             appendConsole(`📄 Generating compliance report endpoint: /api/reports/audit?format=${format}`);
             window.open(`/api/reports/audit?format=${format}`, '_blank');
