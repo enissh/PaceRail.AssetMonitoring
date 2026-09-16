@@ -9,7 +9,7 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllers();
 
-// Check for Render's environment variable or fallback to appsettings
+// Parse Render's database URL or fallback to configuration
 var databaseUrl = Environment.GetEnvironmentVariable("DATABASE_URL") 
     ?? builder.Configuration.GetConnectionString("DefaultConnection")
     ?? throw new InvalidOperationException("Database connection string is missing.");
@@ -89,6 +89,9 @@ app.UseStaticFiles();
 app.UseAuthorization();
 app.MapControllers();
 app.MapHealthChecks("/health");
+
+// Fallback route for Single Page Applications serving static files from wwwroot
+app.MapFallbackToFile("index.html");
 
 using (var scope = app.Services.CreateScope())
 {
